@@ -144,6 +144,12 @@ body {
   margin-bottom: 16px;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .level-badge {
   display: flex;
   align-items: center;

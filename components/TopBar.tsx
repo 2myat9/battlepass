@@ -1,6 +1,7 @@
 "use client";
 
 import { useGame } from "@/lib/store";
+import AuthControl from "@/components/AuthControl";
 
 export default function TopBar() {
   const { state, level } = useGame();
@@ -26,9 +27,12 @@ export default function TopBar() {
         </div>
       </div>
 
-      <div className="coin-pill" title="Coins earned">
-        <span className="coin-dot" />
-        {state.coins.toLocaleString()}
+      <div className="topbar-right">
+        <div className="coin-pill" title="Coins earned">
+          <span className="coin-dot" />
+          {state.coins.toLocaleString()}
+        </div>
+        <AuthControl />
       </div>
     </section>
   );
