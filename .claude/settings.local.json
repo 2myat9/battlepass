@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Read(//Users/htoomyat/.nvm/versions/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/htoomyat/**)",
+      "Read(//Users/htoomyat/.volta/**)"
+    ]
+  }
+}
