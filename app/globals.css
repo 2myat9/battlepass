@@ -960,7 +960,7 @@ body {
   .topbar {
     grid-template-columns: 1fr;
   }
-  .coin-pill {
+  .topbar-right {
     justify-self: start;
   }
 }
