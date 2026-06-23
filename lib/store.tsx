@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useSession } from "next-auth/react";
 import {
   DIFFICULTY_META,
   INITIAL_TASKS,
@@ -17,7 +18,12 @@ import {
   makeId,
   type LevelInfo,
 } from "./game";
-import { STORAGE_KEY, sanitize } from "./state";
+import {
+  loadLocal,
+  loadRemote,
+  saveLocal,
+  saveRemote,
+} from "./state-repository";
 import type { Difficulty, GameState, Reward, Task, Toast } from "./types";
 
 const initialState: GameState = {
@@ -120,29 +126,59 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // Load persisted state after mount (avoids SSR hydration mismatch).
+  const { status } = useSession();
+  const stateRef = useRef(state);
+  const remoteReady = useRef(false);
+
+  // Keep a ref to the latest state for async sync callbacks.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = sanitize(JSON.parse(raw));
-        if (parsed) dispatch({ type: "hydrate", state: parsed });
-      }
-    } catch {
-      /* ignore corrupt storage */
-    }
+    stateRef.current = state;
+  }, [state]);
+
+  // Load locally-persisted state after mount (instant; avoids SSR mismatch).
+  useEffect(() => {
+    const local = loadLocal();
+    if (local) dispatch({ type: "hydrate", state: local });
     setReady(true);
   }, []);
 
-  // Persist on every change once hydrated.
+  // On authentication, sync with the server (merge rule), then enable remote saves.
   useEffect(() => {
     if (!ready) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      /* storage full / unavailable */
+    if (status !== "authenticated") {
+      remoteReady.current = false;
+      return;
     }
-  }, [state, ready]);
+    if (remoteReady.current) return;
+    let cancelled = false;
+    void (async () => {
+      const result = await loadRemote();
+      if (cancelled || !result.ok) return;
+      if (result.state) {
+        // Server has state: server wins. Overwrite the local cache.
+        dispatch({ type: "hydrate", state: result.state });
+        saveLocal(result.state);
+      } else {
+        // Server empty: claim the current local progress.
+        await saveRemote(stateRef.current);
+      }
+      remoteReady.current = true;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, ready]);
+
+  // Persist on every change once hydrated: always local; remote when synced (debounced).
+  useEffect(() => {
+    if (!ready) return;
+    saveLocal(state);
+    if (status !== "authenticated" || !remoteReady.current) return;
+    const t = setTimeout(() => {
+      void saveRemote(state);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [state, ready, status]);
 
   const pushToast = useCallback((message: string, tone: Toast["tone"]) => {
     const id = makeId("toast");
