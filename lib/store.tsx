@@ -118,6 +118,18 @@ interface GameContextValue {
   reset: () => void;
 }
 
+// True when the state holds real progress (vs. the pristine seed). Used to avoid
+// claiming an empty seed onto the server, which "server wins" could later replay
+// over genuine progress.
+function hasProgress(s: GameState): boolean {
+  return (
+    s.totalXp > 0 ||
+    s.tasksCompleted > 0 ||
+    Object.keys(s.purchases).length > 0 ||
+    s.tasks.length !== INITIAL_TASKS.length
+  );
+}
+
 const GameContext = createContext<GameContextValue | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -158,8 +170,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Server has state: server wins. Overwrite the local cache.
         dispatch({ type: "hydrate", state: result.state });
         saveLocal(result.state);
-      } else {
-        // Server empty: claim the current local progress.
+      } else if (hasProgress(stateRef.current)) {
+        // Server empty: claim real local progress (never a pristine seed).
         await saveRemote(stateRef.current);
       }
       remoteReady.current = true;
