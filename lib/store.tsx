@@ -17,9 +17,8 @@ import {
   makeId,
   type LevelInfo,
 } from "./game";
+import { STORAGE_KEY, sanitize } from "./state";
 import type { Difficulty, GameState, Reward, Task, Toast } from "./types";
-
-const STORAGE_KEY = "battlepass.state.v1";
 
 const initialState: GameState = {
   tasks: INITIAL_TASKS,
@@ -99,24 +98,6 @@ function reducer(state: GameState, action: Action): GameState {
     default:
       return state;
   }
-}
-
-function sanitize(raw: unknown): GameState | null {
-  if (!raw || typeof raw !== "object") return null;
-  const s = raw as Partial<GameState>;
-  if (!Array.isArray(s.tasks)) return null;
-  return {
-    tasks: s.tasks as Task[],
-    totalXp: Number(s.totalXp) || 0,
-    coins: Number(s.coins) || 0,
-    tasksCompleted: Number(s.tasksCompleted) || 0,
-    completedByDifficulty: {
-      easy: Number(s.completedByDifficulty?.easy) || 0,
-      medium: Number(s.completedByDifficulty?.medium) || 0,
-      hard: Number(s.completedByDifficulty?.hard) || 0,
-    },
-    purchases: s.purchases && typeof s.purchases === "object" ? s.purchases : {},
-  };
 }
 
 interface GameContextValue {
