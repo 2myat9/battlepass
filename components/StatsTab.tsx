@@ -55,6 +55,7 @@ function LevelRing({ progress, level }: { progress: number; level: number }) {
 export default function StatsTab() {
   const { state, level } = useGame();
   const track = buildTrack(level.level);
+  const pct = Math.round(level.progress * 100);
 
   const maxByDiff = Math.max(
     1,
@@ -131,6 +132,25 @@ export default function StatsTab() {
         <div className="section-head" style={{ marginBottom: 4 }}>
           <h2>Battle pass track</h2>
           <span className="muted">Unlocked {level.level} / {track.length}</span>
+        </div>
+        <div className="track-progress">
+          <div className="xp-label">
+            <span>
+              {level.xpForNext - level.xpIntoLevel} XP to Tier {level.level + 1}
+            </span>
+            <span>
+              {level.xpIntoLevel} / {level.xpForNext} XP
+            </span>
+          </div>
+          <div
+            className="bar"
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ width: `${pct}%` }} />
+          </div>
         </div>
         <div className="track">
           {track.map((tier) => (

@@ -786,6 +786,11 @@ body {
   margin-bottom: 16px;
 }
 
+.track-progress {
+  padding-right: 18px;
+  margin-bottom: 14px;
+}
+
 .track {
   display: flex;
   gap: 12px;
