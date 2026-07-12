@@ -13,7 +13,12 @@ import Toasts from "@/components/Toasts";
 function Header() {
   return (
     <header className="brand">
-      <span className="brand-square" aria-hidden />
+      {/* geometric B: thin spine, two bowls (same mark as app/icon.svg) */}
+      <svg className="brand-mark" viewBox="0 0 16 16" aria-hidden="true">
+        <rect width="2" height="16" fill="var(--ink)" />
+        <rect x="5" width="11" height="7" fill="var(--live)" />
+        <rect x="5" y="9" width="11" height="7" fill="var(--ink)" />
+      </svg>
       <span className="brand-title">Battlepass</span>
       <span className="brand-sub">Level up your to-do list</span>
     </header>

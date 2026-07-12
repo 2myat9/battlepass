@@ -5,7 +5,8 @@ import type { Difficulty, Reward, Task } from "./types";
  *  XP and coins scale exponentially with difficulty.
  *
  *  Every task pays into two separate XP pools:
- *    - `xp`        → battle-pass XP (GameState.totalXp), the fast track.
+ *    - `xp`        → battle-pass XP (GameState.totalXp), the fast track;
+ *      scoped to the current monthly season.
  *    - `accountXp` → account XP (GameState.accountXp), one third of the
  *      pass rate, so the account level stays slow and uninflated.
  * ------------------------------------------------------------------ */
@@ -33,13 +34,12 @@ export const DIFFICULTY_META: Record<Difficulty, DifficultyMeta> = {
 export const DIFFICULTY_ORDER: Difficulty[] = ["easy", "medium", "hard"];
 
 /* ------------------------------------------------------------------ *
- *  Leveling curve
- *  XP required to clear a level grows exponentially.
- *
- *  The battle-pass tier and the account level share this one curve;
- *  they diverge because tasks pay the account pool a third of the
- *  pass rate (see DIFFICULTY_META). Call `levelInfo` with
- *  `totalXp` for the pass tier, `accountXp` for the account level.
+ *  Account leveling curve
+ *  XP required to clear a level grows exponentially. This is the
+ *  lifetime progression: it never resets, and tasks pay it a third
+ *  of the pass rate (see DIFFICULTY_META) so it stays uninflated.
+ *  Call `levelInfo` with `accountXp`. The monthly battle pass uses
+ *  the flat per-tier cost below instead.
  * ------------------------------------------------------------------ */
 
 const BASE_XP = 100;
@@ -83,6 +83,44 @@ export function levelInfo(totalXp: number): LevelInfo {
 }
 
 /* ------------------------------------------------------------------ *
+ *  Battle-pass tiers
+ *  The pass is a monthly season — it resets on the 1st (the store's
+ *  rollSeason handles the reset). Unlike the account curve above,
+ *  every tier costs a flat PASS_TIER_XP so a month of steady play
+ *  can clear all PASS_TIERS tiers; completing tier PASS_TIERS counts
+ *  the pass as finished (GameState.passesCompleted).
+ *
+ *  Pacing: the target daily mix is 2 easy + 1 medium + 1 hard
+ *  (2·10 + 30 + 90 = 140 pass XP), so a tier costs two average days
+ *  (280 XP) and the full pass — 14 tier-ups, 3,920 XP — takes 28
+ *  such days: finishable even in February, with slack in longer
+ *  months.
+ * ------------------------------------------------------------------ */
+
+export const PASS_TIERS = 15;
+export const PASS_TIER_XP = 280;
+
+/** Tier progression for a season's pass XP. Caps at PASS_TIERS. */
+export function passTierInfo(passXp: number): LevelInfo {
+  const xp = Math.max(0, Math.floor(passXp));
+  const maxXp = PASS_TIER_XP * (PASS_TIERS - 1);
+  if (xp >= maxXp) {
+    return {
+      level: PASS_TIERS,
+      xpIntoLevel: PASS_TIER_XP,
+      xpForNext: PASS_TIER_XP,
+      progress: 1,
+    };
+  }
+  return {
+    level: Math.floor(xp / PASS_TIER_XP) + 1,
+    xpIntoLevel: xp % PASS_TIER_XP,
+    xpForNext: PASS_TIER_XP,
+    progress: (xp % PASS_TIER_XP) / PASS_TIER_XP,
+  };
+}
+
+/* ------------------------------------------------------------------ *
  *  Battle-pass track (used by the Stats tab)
  * ------------------------------------------------------------------ */
 
@@ -93,9 +131,8 @@ export interface Tier {
   current: boolean;
 }
 
-export function buildTrack(currentLevel: number, length = 24): Tier[] {
-  const span = Math.max(length, currentLevel + 4);
-  return Array.from({ length: span }, (_, i) => {
+export function buildTrack(currentLevel: number): Tier[] {
+  return Array.from({ length: PASS_TIERS }, (_, i) => {
     const level = i + 1;
     return {
       level,
@@ -107,19 +144,22 @@ export function buildTrack(currentLevel: number, length = 24): Tier[] {
 }
 
 /* ------------------------------------------------------------------ *
- *  Reward shop catalog
+ *  Default reward catalog
+ *  Only the seed: it fills GameState.rewards for new games and for
+ *  saves that predate editable rewards. The user's own list lives in
+ *  state and is managed from the Rewards tab (addReward/deleteReward).
  * ------------------------------------------------------------------ */
 
 export const REWARDS: Reward[] = [
-  { id: "playlist", name: "Fresh Playlist", description: "Curate a new set of focus tunes.", icon: "🎧", cost: 60 },
-  { id: "coffee", name: "Coffee Break", description: "A well-earned hot drink, guilt-free.", icon: "☕", cost: 90 },
-  { id: "gaming", name: "30 min Gaming", description: "Half an hour of pure play.", icon: "🎮", cost: 150 },
-  { id: "snack", name: "Tasty Snack", description: "Grab that thing you've been craving.", icon: "🍫", cost: 180 },
-  { id: "movie", name: "Movie Night", description: "Dim the lights and press play.", icon: "🍿", cost: 280 },
-  { id: "cheatmeal", name: "Cheat Meal", description: "Order in. You earned it.", icon: "🍔", cost: 360 },
-  { id: "sleepin", name: "Sleep In", description: "No alarm tomorrow morning.", icon: "😴", cost: 500 },
-  { id: "shopping", name: "Treat Yourself", description: "Buy something small just because.", icon: "🛍️", cost: 750 },
-  { id: "dayoff", name: "Full Day Off", description: "A whole day with zero obligations.", icon: "🏝️", cost: 1500 },
+  { id: "playlist", name: "Fresh Playlist", description: "Curate a new set of focus tunes.", cost: 60 },
+  { id: "coffee", name: "Coffee Break", description: "A well-earned hot drink, guilt-free.", cost: 90 },
+  { id: "gaming", name: "30 min Gaming", description: "Half an hour of pure play.", cost: 150 },
+  { id: "snack", name: "Tasty Snack", description: "Grab that thing you've been craving.", cost: 180 },
+  { id: "movie", name: "Movie Night", description: "Dim the lights and press play.", cost: 280 },
+  { id: "cheatmeal", name: "Cheat Meal", description: "Order in. You earned it.", cost: 360 },
+  { id: "sleepin", name: "Sleep In", description: "No alarm tomorrow morning.", cost: 500 },
+  { id: "shopping", name: "Treat Yourself", description: "Buy something small just because.", cost: 750 },
+  { id: "dayoff", name: "Full Day Off", description: "A whole day with zero obligations.", cost: 1500 },
 ];
 
 /* ------------------------------------------------------------------ *

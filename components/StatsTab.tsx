@@ -1,12 +1,32 @@
 "use client";
 
 import { useGame } from "@/lib/store";
-import { DIFFICULTY_META, DIFFICULTY_ORDER, buildTrack } from "@/lib/game";
+import {
+  DIFFICULTY_META,
+  DIFFICULTY_ORDER,
+  PASS_TIERS,
+  buildTrack,
+} from "@/lib/game";
+import {
+  daysLeftInMonth,
+  localDay,
+  nextResetLabel,
+  prevDay,
+} from "@/lib/season";
 import Meter from "@/components/Meter";
 
 export default function StatsTab() {
-  const { state, passLevel, accountLevel } = useGame();
+  const { state, passLevel } = useGame();
   const track = buildTrack(passLevel.level);
+  const passComplete = passLevel.level >= PASS_TIERS;
+
+  // A streak is alive if it last advanced today or yesterday.
+  const today = localDay();
+  const streak =
+    state.streakLastDay === today || state.streakLastDay === prevDay(today)
+      ? state.streakCount
+      : 0;
+  const daysLeft = daysLeftInMonth();
 
   const maxByDiff = Math.max(
     1,
@@ -24,15 +44,19 @@ export default function StatsTab() {
         </div>
         <div className="hero-info">
           <div className="xp-label">
-            <span>To tier {passLevel.level + 1}</span>
+            <span>
+              {passComplete ? "Pass complete" : `To tier ${passLevel.level + 1}`}
+            </span>
             <span>
               {passLevel.xpIntoLevel} / {passLevel.xpForNext} XP
             </span>
           </div>
           <Meter progress={passLevel.progress} cells={24} />
           <p>
-            {passLevel.xpForNext - passLevel.xpIntoLevel} XP to go ·{" "}
-            {state.totalXp.toLocaleString()} pass XP earned
+            {passComplete
+              ? `All ${PASS_TIERS} tiers cleared`
+              : `${passLevel.xpForNext - passLevel.xpIntoLevel} XP to go`}{" "}
+            · {state.totalXp.toLocaleString()} pass XP earned
           </p>
         </div>
       </section>
@@ -65,29 +89,27 @@ export default function StatsTab() {
 
       <div className="stat-grid">
         <div className="stat-tile">
-          <div className="stat-label">Pass XP</div>
-          <div className="stat-value">{state.totalXp.toLocaleString()}</div>
-        </div>
-        <div className="stat-tile">
-          <div className="stat-label">Coins</div>
+          <div className="stat-label">Streak</div>
           <div className="stat-value">
-            <span className="gem" aria-hidden>
-              ◆{" "}
-            </span>
-            {state.coins.toLocaleString()}
+            {streak}
+            <span className="stat-sub">day{streak === 1 ? "" : "s"}</span>
           </div>
         </div>
         <div className="stat-tile">
-          <div className="stat-label">Tasks completed</div>
-          <div className="stat-value">{state.tasksCompleted}</div>
+          <div className="stat-label">BPs completed</div>
+          <div className="stat-value">{state.passesCompleted}</div>
         </div>
         <div className="stat-tile">
-          <div className="stat-label">Account level</div>
+          <div className="stat-label">Tasks completed</div>
           <div className="stat-value">
-            {accountLevel.level}
-            <span className="stat-sub">
-              {state.accountXp.toLocaleString()} XP
-            </span>
+            {state.tasksCompleted.toLocaleString()}
+          </div>
+        </div>
+        <div className="stat-tile">
+          <div className="stat-label">Days left</div>
+          <div className="stat-value">
+            {daysLeft}
+            <span className="stat-sub">resets {nextResetLabel()}</span>
           </div>
         </div>
       </div>

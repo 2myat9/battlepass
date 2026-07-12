@@ -94,10 +94,10 @@ button {
   border-bottom: 2px solid var(--ink);
 }
 
-.brand-square {
-  width: 11px;
-  height: 11px;
-  background: var(--ink);
+.brand-mark {
+  display: block;
+  width: 15px;
+  height: 15px;
   align-self: center;
   flex-shrink: 0;
 }
@@ -596,8 +596,8 @@ button {
 
 .owned-tag {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 13px;
+  right: 42px; /* sits left of the card's delete button */
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 600;
@@ -607,9 +607,42 @@ button {
   padding: 2px 6px;
 }
 
+.reward-card .icon-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* deletion surfaces on hover (or keyboard focus); on touch screens,
+   where hover doesn't exist, the button stays always visible */
+@media (hover: hover) {
+  .reward-card .icon-btn {
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+  }
+  .reward-card:hover .icon-btn,
+  .reward-card .icon-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
 .btn-buy {
   padding: 8px 14px;
   font-size: 11px;
+}
+
+/* coin cost field in the add-reward form */
+.cost-input {
+  flex: 0 0 104px;
+  font-family: var(--mono);
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.cost-input::-webkit-inner-spin-button,
+.cost-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* ------------------------------------------------------------------ *

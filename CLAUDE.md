@@ -41,9 +41,10 @@ Toasts are part of the store (`pushToast` is fired from `completeTask`/`redeem`)
 All gameplay numbers and derived math live here — change this file to rebalance the game:
 
 - `DIFFICULTY_META` — XP/coin rewards per difficulty (exponential: easy/medium/hard). Each task pays **two XP pools**: full `xp` into the battle pass (`GameState.totalXp`, drives the Stats tier track) and a reduced `accountXp` into the account level (`GameState.accountXp`, drives the TopBar level stamp) so the account level stays uninflated.
-- `xpForLevel` / `levelInfo` — exponential leveling curve (`100 * 1.32^(level-1)`); `levelInfo` derives a level and intra-level progress from a cumulative XP pool. Both progressions share this curve — the store exposes them as `passLevel` / `accountLevel`. `sanitize()` back-fills `accountXp` for pre-split saves from `completedByDifficulty`.
-- `buildTrack` — the Stats tab's battle-pass tier list.
-- `REWARDS` (shop catalog) and `INITIAL_TASKS` (seed data).
+- The two progressions use **different curves**. `xpForLevel` / `levelInfo` — exponential curve (`100 * 1.32^(level-1)`) — is the lifetime **account level** (`accountLevel` in the store). `passTierInfo` — flat `PASS_TIER_XP` (280) per tier, capped at `PASS_TIERS` (15) — is the **battle pass** (`passLevel`), paced so the target daily mix (2 easy + 1 medium + 1 hard = 140 pass XP) finishes it in ~28 days.
+- The battle pass is a **monthly season**: `rollSeason` in `lib/store.tsx` resets `totalXp` (never `accountXp`) on the first `hydrate`/`completeTask` in a new month, keyed by `GameState.passSeason` (`"YYYY-MM"`, `""` = adopt current month without resetting). Crossing the final tier increments `passesCompleted` immediately. Calendar helpers (local-date strings, days-left math) live in `lib/season.ts`; the daily streak (`streakCount` / `streakLastDay`) also updates in `completeTask`. `sanitize()` back-fills all of these plus `accountXp` for old saves.
+- `buildTrack` — the Stats tab's battle-pass tier list (always `PASS_TIERS` long).
+- `REWARDS` and `INITIAL_TASKS` are **seed data only**: both are copied into state (`GameState.rewards` / `.tasks`) and the user edits their own copies (`addReward`/`deleteReward` actions; the shop renders `state.rewards` sorted by cost, not the constant).
 
 ### Styling: `app/globals.css`
 

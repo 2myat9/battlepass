@@ -14,10 +14,14 @@ import { useSession } from "next-auth/react";
 import {
   DIFFICULTY_META,
   INITIAL_TASKS,
+  PASS_TIERS,
+  REWARDS,
   levelInfo,
   makeId,
+  passTierInfo,
   type LevelInfo,
 } from "./game";
+import { localDay, monthKey, prevDay } from "./season";
 import {
   loadLocal,
   loadRemote,
@@ -33,21 +37,42 @@ const initialState: GameState = {
   coins: 0,
   tasksCompleted: 0,
   completedByDifficulty: { easy: 0, medium: 0, hard: 0 },
+  rewards: REWARDS,
   purchases: {},
+  // "" (not the current month) keeps initialState deterministic for SSR;
+  // rollSeason stamps the real month on the first hydrate/completion.
+  passSeason: "",
+  passesCompleted: 0,
+  streakCount: 0,
+  streakLastDay: "",
 };
 
+// Date-dependent actions carry their day/month so the reducer stays pure.
 type Action =
-  | { type: "hydrate"; state: GameState }
+  | { type: "hydrate"; state: GameState; month: string }
   | { type: "addTask"; title: string; difficulty: Difficulty }
-  | { type: "completeTask"; id: string }
+  | { type: "completeTask"; id: string; day: string }
   | { type: "deleteTask"; id: string }
   | { type: "redeem"; reward: Reward }
+  | { type: "addReward"; name: string; cost: number }
+  | { type: "deleteReward"; id: string }
   | { type: "reset" };
+
+// A battle pass lasts one calendar month. On the first hydrate/completion in
+// a new month, start the next season: pass XP resets, the tier track starts
+// over. (Finished passes are tallied the moment the final tier is reached,
+// not here.) A blank season — fresh installs and pre-season saves — adopts
+// the current month without resetting.
+function rollSeason(state: GameState, month: string): GameState {
+  if (state.passSeason === month) return state;
+  if (state.passSeason === "") return { ...state, passSeason: month };
+  return { ...state, passSeason: month, totalXp: 0 };
+}
 
 function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case "hydrate":
-      return action.state;
+      return rollSeason(action.state, action.month);
 
     case "addTask": {
       const title = action.title.trim();
@@ -65,20 +90,38 @@ function reducer(state: GameState, action: Action): GameState {
     case "completeTask": {
       const task = state.tasks.find((t) => t.id === action.id);
       if (!task || task.done) return state;
+      // In case the app sat open across the 1st of the month.
+      const rolled = rollSeason(state, action.day.slice(0, 7));
       const meta = DIFFICULTY_META[task.difficulty];
+      const totalXp = rolled.totalXp + meta.xp;
+      // Pass XP only grows within a season, so the final tier is crossed
+      // at most once — safe to tally the finished pass right here.
+      const finishedPass =
+        passTierInfo(rolled.totalXp).level < PASS_TIERS &&
+        passTierInfo(totalXp).level >= PASS_TIERS;
+      // One streak step per day; a missed day restarts the run at 1.
+      const streakCount =
+        rolled.streakLastDay === action.day
+          ? Math.max(rolled.streakCount, 1)
+          : rolled.streakLastDay === prevDay(action.day)
+            ? rolled.streakCount + 1
+            : 1;
       return {
-        ...state,
-        tasks: state.tasks.map((t) =>
+        ...rolled,
+        tasks: rolled.tasks.map((t) =>
           t.id === action.id ? { ...t, done: true } : t,
         ),
-        totalXp: state.totalXp + meta.xp,
-        accountXp: state.accountXp + meta.accountXp,
-        coins: state.coins + meta.coins,
-        tasksCompleted: state.tasksCompleted + 1,
+        totalXp,
+        accountXp: rolled.accountXp + meta.accountXp,
+        coins: rolled.coins + meta.coins,
+        tasksCompleted: rolled.tasksCompleted + 1,
         completedByDifficulty: {
-          ...state.completedByDifficulty,
-          [task.difficulty]: state.completedByDifficulty[task.difficulty] + 1,
+          ...rolled.completedByDifficulty,
+          [task.difficulty]: rolled.completedByDifficulty[task.difficulty] + 1,
         },
+        passesCompleted: rolled.passesCompleted + (finishedPass ? 1 : 0),
+        streakCount,
+        streakLastDay: action.day,
       };
     }
 
@@ -97,6 +140,20 @@ function reducer(state: GameState, action: Action): GameState {
       };
     }
 
+    case "addReward": {
+      const name = action.name.trim();
+      const cost = Math.floor(action.cost);
+      if (!name || !Number.isFinite(cost) || cost < 1) return state;
+      const reward: Reward = { id: makeId("r"), name, cost };
+      return { ...state, rewards: [...state.rewards, reward] };
+    }
+
+    case "deleteReward":
+      return {
+        ...state,
+        rewards: state.rewards.filter((r) => r.id !== action.id),
+      };
+
     case "reset":
       return {
         ...initialState,
@@ -110,7 +167,7 @@ function reducer(state: GameState, action: Action): GameState {
 
 interface GameContextValue {
   state: GameState;
-  /** battle-pass tier progression (full task XP) */
+  /** battle-pass tier progression for the current monthly season */
   passLevel: LevelInfo;
   /** account level progression (reduced task XP) */
   accountLevel: LevelInfo;
@@ -120,6 +177,8 @@ interface GameContextValue {
   completeTask: (task: Task) => void;
   deleteTask: (id: string) => void;
   redeem: (reward: Reward) => boolean;
+  addReward: (name: string, cost: number) => void;
+  deleteReward: (id: string) => void;
   reset: () => void;
 }
 
@@ -131,7 +190,8 @@ function hasProgress(s: GameState): boolean {
     s.totalXp > 0 ||
     s.tasksCompleted > 0 ||
     Object.keys(s.purchases).length > 0 ||
-    s.tasks.length !== INITIAL_TASKS.length
+    s.tasks.length !== INITIAL_TASKS.length ||
+    s.rewards.length !== REWARDS.length
   );
 }
 
@@ -155,7 +215,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // Load locally-persisted state after mount (instant; avoids SSR mismatch).
   useEffect(() => {
     const local = loadLocal();
-    if (local) dispatch({ type: "hydrate", state: local });
+    if (local) dispatch({ type: "hydrate", state: local, month: monthKey() });
     setReady(true);
   }, []);
 
@@ -173,7 +233,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (cancelled || !result.ok) return;
       if (result.state) {
         // Server has state: server wins. Overwrite the local cache.
-        dispatch({ type: "hydrate", state: result.state });
+        dispatch({ type: "hydrate", state: result.state, month: monthKey() });
         saveLocal(result.state);
       } else if (hasProgress(stateRef.current)) {
         // Server empty: claim real local progress (never a pristine seed).
@@ -225,7 +285,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     (task: Task) => {
       if (task.done) return;
       const meta = DIFFICULTY_META[task.difficulty];
-      dispatch({ type: "completeTask", id: task.id });
+      dispatch({ type: "completeTask", id: task.id, day: localDay() });
       pushToast(`+${meta.xp} XP  ·  +${meta.coins} coins`, "xp");
     },
     [pushToast],
@@ -233,6 +293,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const deleteTask = useCallback((id: string) => {
     dispatch({ type: "deleteTask", id });
+  }, []);
+
+  const addReward = useCallback((name: string, cost: number) => {
+    if (!name.trim()) return;
+    dispatch({ type: "addReward", name, cost });
+  }, []);
+
+  const deleteReward = useCallback((id: string) => {
+    dispatch({ type: "deleteReward", id });
   }, []);
 
   const redeem = useCallback(
@@ -253,7 +322,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     pushToast("Progress reset", "warn");
   }, [pushToast]);
 
-  const passLevel = useMemo(() => levelInfo(state.totalXp), [state.totalXp]);
+  const passLevel = useMemo(() => passTierInfo(state.totalXp), [state.totalXp]);
   const accountLevel = useMemo(
     () => levelInfo(state.accountXp),
     [state.accountXp],
@@ -269,6 +338,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     completeTask,
     deleteTask,
     redeem,
+    addReward,
+    deleteReward,
     reset,
   };
 
