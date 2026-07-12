@@ -24,10 +24,7 @@ export default function HomeTab() {
       </div>
 
       {active.length === 0 ? (
-        <div className="card empty">
-          <div className="big">🎯</div>
-          <div>All clear! Add a quest above to start earning XP.</div>
-        </div>
+        <div className="empty">All clear. Add a task above to earn XP.</div>
       ) : (
         <div className="task-list">
           {active.map((t) => (
@@ -43,7 +40,7 @@ export default function HomeTab() {
             onClick={() => setShowDone((v) => !v)}
           >
             <span>Completed · {done.length}</span>
-            <span>{showDone ? "▾" : "▸"}</span>
+            <span>{showDone ? "−" : "+"}</span>
           </button>
           {showDone && (
             <div className="task-list">

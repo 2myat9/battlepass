@@ -5,7 +5,23 @@
       "Read(//Users/htoomyat/.nvm/versions/**)",
       "Read(//opt/homebrew/bin/**)",
       "Read(//Users/htoomyat/**)",
-      "Read(//Users/htoomyat/.volta/**)"
+      "Read(//Users/htoomyat/.volta/**)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git check-ignore *)",
+      "Bash(gh auth *)",
+      "Bash(command -v gh)",
+      "Bash(gh --version)",
+      "Bash(git ls-remote *)",
+      "Bash(git push *)",
+      "Bash(curl -s -o /dev/null -w \"GET %{http_code}\\\\n\" --retry 15 --retry-connrefused --retry-delay 1 http://localhost:3000/api/state)",
+      "Bash(curl -s -o /dev/null -w \"PUT %{http_code}\\\\n\" -X PUT -H \"Content-Type: application/json\" -d '{}' http://localhost:3000/api/state)",
+      "Bash(git fetch *)",
+      "Bash(git --no-pager log --oneline --left-right --graph main...origin/main)",
+      "Bash(git --no-pager log --oneline main..origin/main)",
+      "Bash(git rebase *)",
+      "Bash(git stash *)"
     ]
   }
 }

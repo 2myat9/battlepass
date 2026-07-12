@@ -13,13 +13,9 @@ import Toasts from "@/components/Toasts";
 function Header() {
   return (
     <header className="brand">
-      <div className="brand-mark">⚔️</div>
-      <div>
-        <div className="brand-title">
-          <span className="gradient-text">Battlepass</span>
-        </div>
-        <div className="brand-sub">Level up your to-do list</div>
-      </div>
+      <span className="brand-square" aria-hidden />
+      <span className="brand-title">Battlepass</span>
+      <span className="brand-sub">Level up your to-do list</span>
     </header>
   );
 }
@@ -61,7 +57,6 @@ export default function Page() {
   return (
     <GameProvider>
       <div className="app-shell">
-        <div className="bg-glow" />
         <main className="container">
           <Shell />
         </main>

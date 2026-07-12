@@ -18,11 +18,11 @@ export default function AddTaskForm() {
   }
 
   return (
-    <form className="card add-form" onSubmit={submit}>
+    <form className="add-form" onSubmit={submit}>
       <div className="add-row">
         <input
           className="text-input"
-          placeholder="Add a new quest…"
+          placeholder="Add a task…"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
@@ -46,10 +46,10 @@ export default function AddTaskForm() {
               onClick={() => setDifficulty(d)}
             >
               <span>
-                {meta.glyph} {meta.label}
+                <span className="glyph">{meta.glyph}</span> {meta.label}
               </span>
               <span className="seg-reward">
-                +{meta.xp} XP · +{meta.coins}c
+                +{meta.xp} XP · +{meta.coins} ◆
               </span>
             </button>
           );

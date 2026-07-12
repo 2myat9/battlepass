@@ -10,7 +10,7 @@ export default function TaskItem({ task }: { task: Task }) {
 
   return (
     <div
-      className={`card task${task.done ? " done" : ""}`}
+      className={`task${task.done ? " done" : ""}`}
       style={{ ["--task-accent" as string]: `var(--${meta.accent})` }}
     >
       <button
@@ -27,11 +27,11 @@ export default function TaskItem({ task }: { task: Task }) {
         <div className="task-title">{task.title}</div>
         <div className="task-meta">
           <span className="pill">
-            {meta.glyph} {meta.label}
+            <span className="glyph">{meta.glyph}</span> {meta.label}
           </span>
           {!task.done && (
             <span className="reward-hint">
-              +{meta.xp} XP · +{meta.coins} coins
+              +{meta.xp} XP · +{meta.coins} ◆
             </span>
           )}
         </div>

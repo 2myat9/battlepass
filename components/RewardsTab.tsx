@@ -10,7 +10,9 @@ export default function RewardsTab() {
     <div>
       <div className="section-head">
         <h2>Reward shop</h2>
-        <span className="muted">{state.coins.toLocaleString()} coins available</span>
+        <span className="muted">
+          ◆ {state.coins.toLocaleString()} available
+        </span>
       </div>
 
       <div className="reward-grid">
@@ -20,17 +22,16 @@ export default function RewardsTab() {
           return (
             <div
               key={r.id}
-              className={`card reward-card${affordable ? "" : " locked"}`}
+              className={`reward-card${affordable ? "" : " locked"}`}
             >
               {owned > 0 && <span className="owned-tag">×{owned}</span>}
-              <div className="reward-icon" aria-hidden>
-                {r.icon}
-              </div>
               <div className="reward-name">{r.name}</div>
               <div className="reward-desc">{r.description}</div>
               <div className="reward-foot">
                 <span className="cost">
-                  <span className="coin-dot" />
+                  <span className="gem" aria-hidden>
+                    ◆
+                  </span>
                   {r.cost}
                 </span>
                 <button

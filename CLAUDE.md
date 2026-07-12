@@ -40,13 +40,15 @@ Toasts are part of the store (`pushToast` is fired from `completeTask`/`redeem`)
 
 All gameplay numbers and derived math live here — change this file to rebalance the game:
 
-- `DIFFICULTY_META` — XP/coin rewards per difficulty (exponential: easy/medium/hard).
-- `xpForLevel` / `levelInfo` — exponential leveling curve (`100 * 1.32^(level-1)`); `levelInfo` derives the current level and intra-level progress from cumulative `totalXp`.
+- `DIFFICULTY_META` — XP/coin rewards per difficulty (exponential: easy/medium/hard). Each task pays **two XP pools**: full `xp` into the battle pass (`GameState.totalXp`, drives the Stats tier track) and a reduced `accountXp` into the account level (`GameState.accountXp`, drives the TopBar level stamp) so the account level stays uninflated.
+- `xpForLevel` / `levelInfo` — exponential leveling curve (`100 * 1.32^(level-1)`); `levelInfo` derives a level and intra-level progress from a cumulative XP pool. Both progressions share this curve — the store exposes them as `passLevel` / `accountLevel`. `sanitize()` back-fills `accountXp` for pre-split saves from `completedByDifficulty`.
 - `buildTrack` — the Stats tab's battle-pass tier list.
 - `REWARDS` (shop catalog) and `INITIAL_TASKS` (seed data).
 
 ### Styling: `app/globals.css`
 
-Visual styling is plain CSS classes (`.card`, `.task`, `.tier`, …) driven by theme tokens defined as CSS custom properties in `:root`. Tailwind v4 is imported but used sparingly. Per-difficulty accent colors are passed to components via inline CSS variables (`--task-accent`, `--seg-accent`) that reference `--easy` / `--medium` / `--hard`.
+Visual styling is plain CSS classes (`.task`, `.tier`, `.meter`, …) driven by theme tokens defined as CSS custom properties in `:root`. Tailwind v4 is imported but used sparingly. Per-difficulty accent colors are passed to components via inline CSS variables (`--task-accent`, `--seg-accent`) that reference `--easy` / `--medium` / `--hard`.
 
-**Gotcha:** do not give a CSS class a name that collides with a Tailwind v4 utility. A class literally named `ring` will pull in Tailwind's `ring` box-shadow utility and draw a rectangular outline — this is why the level-progress ring class is `.level-ring`.
+The design system is deliberately **flat**: white paper / navy ink (`--ink`) with a single cobalt accent (`--live`), IBM Plex Sans + Mono (loaded via `next/font` in `app/layout.tsx`), and **no border-radius, box-shadow, gradients, or emoji anywhere**. Difficulty is encoded as depth-of-blue plus tally glyphs (`▮`/`▮▮`/`▮▮▮` in `DIFFICULTY_META`); progress is rendered as discrete square cells by `components/Meter.tsx` — reuse it for any new progress display rather than adding a continuous bar.
+
+**Gotcha:** do not give a CSS class a name that collides with a Tailwind v4 utility (e.g. a class literally named `ring` pulls in Tailwind's `ring` box-shadow utility and draws a rectangular outline).

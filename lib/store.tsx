@@ -29,6 +29,7 @@ import type { Difficulty, GameState, Reward, Task, Toast } from "./types";
 const initialState: GameState = {
   tasks: INITIAL_TASKS,
   totalXp: 0,
+  accountXp: 0,
   coins: 0,
   tasksCompleted: 0,
   completedByDifficulty: { easy: 0, medium: 0, hard: 0 },
@@ -71,6 +72,7 @@ function reducer(state: GameState, action: Action): GameState {
           t.id === action.id ? { ...t, done: true } : t,
         ),
         totalXp: state.totalXp + meta.xp,
+        accountXp: state.accountXp + meta.accountXp,
         coins: state.coins + meta.coins,
         tasksCompleted: state.tasksCompleted + 1,
         completedByDifficulty: {
@@ -108,7 +110,10 @@ function reducer(state: GameState, action: Action): GameState {
 
 interface GameContextValue {
   state: GameState;
-  level: LevelInfo;
+  /** battle-pass tier progression (full task XP) */
+  passLevel: LevelInfo;
+  /** account level progression (reduced task XP) */
+  accountLevel: LevelInfo;
   ready: boolean;
   toasts: Toast[];
   addTask: (title: string, difficulty: Difficulty) => void;
@@ -237,7 +242,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       dispatch({ type: "redeem", reward });
-      pushToast(`Redeemed ${reward.name} ${reward.icon}`, "reward");
+      pushToast(`Redeemed ${reward.name}`, "reward");
       return true;
     },
     [state.coins, pushToast],
@@ -248,11 +253,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     pushToast("Progress reset", "warn");
   }, [pushToast]);
 
-  const level = useMemo(() => levelInfo(state.totalXp), [state.totalXp]);
+  const passLevel = useMemo(() => levelInfo(state.totalXp), [state.totalXp]);
+  const accountLevel = useMemo(
+    () => levelInfo(state.accountXp),
+    [state.accountXp],
+  );
 
   const value: GameContextValue = {
     state,
-    level,
+    passLevel,
+    accountLevel,
     ready,
     toasts,
     addTask,

@@ -2,10 +2,10 @@
 
 import type { TabKey } from "@/lib/types";
 
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: "home", label: "Tasks", icon: "🗓️" },
-  { key: "rewards", label: "Rewards", icon: "🎁" },
-  { key: "stats", label: "Stats", icon: "📈" },
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "home", label: "Tasks" },
+  { key: "rewards", label: "Rewards" },
+  { key: "stats", label: "Stats" },
 ];
 
 export default function TabBar({
@@ -16,7 +16,7 @@ export default function TabBar({
   onChange: (t: TabKey) => void;
 }) {
   return (
-    <nav className="card tabbar" aria-label="Sections">
+    <nav className="tabbar" aria-label="Sections">
       {TABS.map((t) => (
         <button
           key={t.key}
@@ -24,9 +24,6 @@ export default function TabBar({
           aria-current={tab === t.key}
           onClick={() => onChange(t.key)}
         >
-          <span className="tab-ico" aria-hidden>
-            {t.icon}
-          </span>
           {t.label}
         </button>
       ))}

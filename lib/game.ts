@@ -3,24 +3,31 @@ import type { Difficulty, Reward, Task } from "./types";
 /* ------------------------------------------------------------------ *
  *  Difficulty rewards
  *  XP and coins scale exponentially with difficulty.
+ *
+ *  Every task pays into two separate XP pools:
+ *    - `xp`        → battle-pass XP (GameState.totalXp), the fast track.
+ *    - `accountXp` → account XP (GameState.accountXp), one third of the
+ *      pass rate, so the account level stays slow and uninflated.
  * ------------------------------------------------------------------ */
 
 export interface DifficultyMeta {
   label: string;
-  /** experience awarded on completion */
+  /** battle-pass experience awarded on completion */
   xp: number;
+  /** account experience awarded on completion (reduced rate) */
+  accountXp: number;
   /** currency awarded on completion */
   coins: number;
-  /** short emoji glyph */
+  /** short tally glyph — one bar per difficulty step */
   glyph: string;
   /** css custom-property accent name (see globals.css) */
   accent: string;
 }
 
 export const DIFFICULTY_META: Record<Difficulty, DifficultyMeta> = {
-  easy: { label: "Easy", xp: 10, coins: 5, glyph: "🌱", accent: "easy" },
-  medium: { label: "Medium", xp: 30, coins: 20, glyph: "⚡", accent: "medium" },
-  hard: { label: "Hard", xp: 90, coins: 75, glyph: "🔥", accent: "hard" },
+  easy: { label: "Easy", xp: 10, accountXp: 3, coins: 5, glyph: "▮", accent: "easy" },
+  medium: { label: "Medium", xp: 30, accountXp: 10, coins: 20, glyph: "▮▮", accent: "medium" },
+  hard: { label: "Hard", xp: 90, accountXp: 30, coins: 75, glyph: "▮▮▮", accent: "hard" },
 };
 
 export const DIFFICULTY_ORDER: Difficulty[] = ["easy", "medium", "hard"];
@@ -28,6 +35,11 @@ export const DIFFICULTY_ORDER: Difficulty[] = ["easy", "medium", "hard"];
 /* ------------------------------------------------------------------ *
  *  Leveling curve
  *  XP required to clear a level grows exponentially.
+ *
+ *  The battle-pass tier and the account level share this one curve;
+ *  they diverge because tasks pay the account pool a third of the
+ *  pass rate (see DIFFICULTY_META). Call `levelInfo` with
+ *  `totalXp` for the pass tier, `accountXp` for the account level.
  * ------------------------------------------------------------------ */
 
 const BASE_XP = 100;
@@ -74,11 +86,8 @@ export function levelInfo(totalXp: number): LevelInfo {
  *  Battle-pass track (used by the Stats tab)
  * ------------------------------------------------------------------ */
 
-const TRACK_REWARDS = ["🎖️", "💎", "🎁", "⭐", "👑", "🏆", "🚀", "🔮", "🪙", "🎉"];
-
 export interface Tier {
   level: number;
-  glyph: string;
   reward: string;
   unlocked: boolean;
   current: boolean;
@@ -90,7 +99,6 @@ export function buildTrack(currentLevel: number, length = 24): Tier[] {
     const level = i + 1;
     return {
       level,
-      glyph: TRACK_REWARDS[i % TRACK_REWARDS.length],
       reward: `Tier ${level}`,
       unlocked: level <= currentLevel,
       current: level === currentLevel,

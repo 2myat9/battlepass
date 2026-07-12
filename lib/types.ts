@@ -20,7 +20,10 @@ export interface Reward {
 
 export interface GameState {
   tasks: Task[];
+  /** battle-pass XP: tasks pay full XP here; drives the tier track */
   totalXp: number;
+  /** account XP: tasks pay a reduced rate here; drives the account level */
+  accountXp: number;
   coins: number;
   tasksCompleted: number;
   completedByDifficulty: Record<Difficulty, number>;
