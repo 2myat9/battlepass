@@ -50,7 +50,7 @@ const initialState: GameState = {
 // Date-dependent actions carry their day/month so the reducer stays pure.
 type Action =
   | { type: "hydrate"; state: GameState; month: string }
-  | { type: "addTask"; title: string; difficulty: Difficulty }
+  | { type: "addTask"; title: string; difficulty: Difficulty; repeatable: boolean }
   | { type: "completeTask"; id: string; day: string }
   | { type: "deleteTask"; id: string }
   | { type: "redeem"; reward: Reward }
@@ -66,7 +66,13 @@ type Action =
 function rollSeason(state: GameState, month: string): GameState {
   if (state.passSeason === month) return state;
   if (state.passSeason === "") return { ...state, passSeason: month };
-  return { ...state, passSeason: month, totalXp: 0 };
+  // New season: pass XP resets, and so do repeatable tasks' per-season counts.
+  return {
+    ...state,
+    passSeason: month,
+    totalXp: 0,
+    tasks: state.tasks.map((t) => (t.count ? { ...t, count: 0 } : t)),
+  };
 }
 
 function reducer(state: GameState, action: Action): GameState {
@@ -83,6 +89,7 @@ function reducer(state: GameState, action: Action): GameState {
         difficulty: action.difficulty,
         done: false,
         createdAt: Date.now(),
+        ...(action.repeatable ? { repeatable: true, count: 0 } : {}),
       };
       return { ...state, tasks: [task, ...state.tasks] };
     }
@@ -108,8 +115,13 @@ function reducer(state: GameState, action: Action): GameState {
             : 1;
       return {
         ...rolled,
+        // Repeatable tasks stay open and tally a completion; the rest check off.
         tasks: rolled.tasks.map((t) =>
-          t.id === action.id ? { ...t, done: true } : t,
+          t.id === action.id
+            ? t.repeatable
+              ? { ...t, count: (t.count ?? 0) + 1 }
+              : { ...t, done: true }
+            : t,
         ),
         totalXp,
         accountXp: rolled.accountXp + meta.accountXp,
@@ -173,7 +185,7 @@ interface GameContextValue {
   accountLevel: LevelInfo;
   ready: boolean;
   toasts: Toast[];
-  addTask: (title: string, difficulty: Difficulty) => void;
+  addTask: (title: string, difficulty: Difficulty, repeatable?: boolean) => void;
   completeTask: (task: Task) => void;
   deleteTask: (id: string) => void;
   redeem: (reward: Reward) => boolean;
@@ -274,9 +286,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addTask = useCallback(
-    (title: string, difficulty: Difficulty) => {
+    (title: string, difficulty: Difficulty, repeatable = false) => {
       if (!title.trim()) return;
-      dispatch({ type: "addTask", title, difficulty });
+      dispatch({ type: "addTask", title, difficulty, repeatable });
     },
     [],
   );

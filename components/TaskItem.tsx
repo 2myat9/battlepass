@@ -7,6 +7,7 @@ import type { Task } from "@/lib/types";
 export default function TaskItem({ task }: { task: Task }) {
   const { completeTask, deleteTask } = useGame();
   const meta = DIFFICULTY_META[task.difficulty];
+  const repeatable = !!task.repeatable;
 
   return (
     <div
@@ -14,17 +15,24 @@ export default function TaskItem({ task }: { task: Task }) {
       style={{ ["--task-accent" as string]: `var(--${meta.accent})` }}
     >
       <button
-        className={`check${task.done ? " checked" : ""}`}
+        className={`check${task.done ? " checked" : ""}${repeatable ? " repeat" : ""}`}
         onClick={() => completeTask(task)}
         disabled={task.done}
-        aria-label={task.done ? "Completed" : "Complete task"}
-        title={task.done ? "Completed" : "Complete task"}
+        aria-label={
+          repeatable ? "Complete again" : task.done ? "Completed" : "Complete task"
+        }
+        title={
+          repeatable ? "Complete again" : task.done ? "Completed" : "Complete task"
+        }
       >
-        {task.done ? "✓" : ""}
+        {repeatable ? "↻" : task.done ? "✓" : ""}
       </button>
 
       <div className="task-body">
-        <div className="task-title">{task.title}</div>
+        <div className="task-title-row">
+          <div className="task-title">{task.title}</div>
+          {repeatable && <span className="repeat-count">×{task.count ?? 0}</span>}
+        </div>
         <div className="task-meta">
           <span className="pill">
             <span className="glyph">{meta.glyph}</span> {meta.label}

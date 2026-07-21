@@ -9,11 +9,12 @@ export default function AddTaskForm() {
   const { addTask } = useGame();
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [repeatable, setRepeatable] = useState(false);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    addTask(title, difficulty);
+    addTask(title, difficulty, repeatable);
     setTitle("");
   }
 
@@ -32,6 +33,18 @@ export default function AddTaskForm() {
           Add
         </button>
       </div>
+
+      <button
+        type="button"
+        className="repeat-toggle"
+        data-active={repeatable}
+        aria-pressed={repeatable}
+        onClick={() => setRepeatable((v) => !v)}
+      >
+        <span className="repeat-box">{repeatable ? "✓" : ""}</span>
+        <span className="repeat-label">Repeatable</span>
+        <span className="repeat-note">complete it any number of times</span>
+      </button>
 
       <div className="segment">
         {DIFFICULTY_ORDER.map((d) => {

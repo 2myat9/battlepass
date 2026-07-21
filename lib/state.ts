@@ -13,7 +13,11 @@ export function sanitize(raw: unknown): GameState | null {
     hard: Number(s.completedByDifficulty?.hard) || 0,
   };
   return {
-    tasks: s.tasks as Task[],
+    // Repeatable tasks carry a per-season count; coerce it so a corrupt save
+    // can't render "×undefined". Non-repeatable tasks pass through untouched.
+    tasks: (s.tasks as Task[]).map((t) =>
+      t.repeatable ? { ...t, repeatable: true, count: Number(t.count) || 0 } : t,
+    ),
     totalXp: Number(s.totalXp) || 0,
     // Blobs saved before the account/pass split carry no accountXp;
     // reconstruct it from the completion counts at today's rates.
