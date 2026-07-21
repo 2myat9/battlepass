@@ -20,7 +20,6 @@ function Header() {
         <rect x="5" y="9" width="11" height="7" fill="var(--ink)" />
       </svg>
       <span className="brand-title">Battlepass</span>
-      <span className="brand-sub">Level up your to-do list</span>
     </header>
   );
 }

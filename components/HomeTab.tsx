@@ -6,7 +6,7 @@ import AddTaskForm from "./AddTaskForm";
 import TaskItem from "./TaskItem";
 
 export default function HomeTab() {
-  const { state } = useGame();
+  const { state, clearCompleted } = useGame();
   const [showDone, setShowDone] = useState(true);
 
   const active = state.tasks.filter((t) => !t.done);
@@ -35,13 +35,37 @@ export default function HomeTab() {
 
       {done.length > 0 && (
         <>
-          <button
-            className="collapse-head"
-            onClick={() => setShowDone((v) => !v)}
-          >
-            <span>Completed · {done.length}</span>
-            <span>{showDone ? "−" : "+"}</span>
-          </button>
+          <div className="collapse-row">
+            <button
+              className="collapse-head"
+              onClick={() => setShowDone((v) => !v)}
+            >
+              <span>Completed · {done.length}</span>
+              <span aria-hidden>{showDone ? "−" : "+"}</span>
+            </button>
+            <button
+              className="icon-btn clear-done"
+              onClick={clearCompleted}
+              aria-label="Delete all completed tasks"
+              title="Delete all completed tasks"
+            >
+              {/* trash can: lid, handle, body with ribs */}
+              <svg
+                viewBox="0 0 16 16"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <path d="M2.5 4h11" />
+                <path d="M6 4V2.5h4V4" />
+                <path d="M4 4v9.5h8V4" />
+                <path d="M6.5 6.7v4.6M9.5 6.7v4.6" />
+              </svg>
+            </button>
+          </div>
           {showDone && (
             <div className="task-list">
               {done.map((t) => (

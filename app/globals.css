@@ -110,13 +110,6 @@ button {
   text-transform: uppercase;
 }
 
-.brand-sub {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--steel);
-}
-
 /* ------------------------------------------------------------------ *
  *  Top bar (level + xp + coins)
  * ------------------------------------------------------------------ */
@@ -124,16 +117,16 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  padding: 18px 0;
+  gap: 22px;
+  padding: 34px 0;
   border-bottom: 1px solid var(--hairline);
   margin-bottom: 26px;
 }
 
 .level-stamp {
   flex-shrink: 0;
-  width: 46px;
-  height: 46px;
+  width: 76px;
+  height: 76px;
   background: var(--ink);
   color: var(--paper);
   font-family: var(--mono);
@@ -145,13 +138,13 @@ button {
 }
 
 .level-stamp small {
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.2em;
-  margin-bottom: 3px;
+  margin-bottom: 5px;
 }
 
 .level-stamp b {
-  font-size: 18px;
+  font-size: 34px;
   font-weight: 600;
 }
 
@@ -163,7 +156,13 @@ button {
 .xp-label {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 7px;
+  margin-bottom: 12px;
+}
+
+/* the account-level meter is the topbar's centerpiece — taller than the
+   inline meters reused elsewhere */
+.xp-meta .meter {
+  height: 26px;
 }
 
 .topbar-right {
@@ -586,9 +585,16 @@ button {
   font-size: 14px;
 }
 
+.collapse-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 28px;
+}
+
 .collapse-head {
   appearance: none;
-  width: 100%;
+  flex: 1;
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -602,7 +608,6 @@ button {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 8px 2px;
-  margin-top: 28px;
 }
 
 .collapse-head:hover {

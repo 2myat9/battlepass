@@ -53,6 +53,7 @@ type Action =
   | { type: "addTask"; title: string; difficulty: Difficulty; repeatable: boolean }
   | { type: "completeTask"; id: string; day: string }
   | { type: "deleteTask"; id: string }
+  | { type: "clearCompleted" }
   | { type: "redeem"; reward: Reward }
   | { type: "addReward"; name: string; cost: number }
   | { type: "deleteReward"; id: string }
@@ -140,6 +141,11 @@ function reducer(state: GameState, action: Action): GameState {
     case "deleteTask":
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.id) };
 
+    // Repeatable tasks are never `done`, so bulk-clear only removes tasks that
+    // were actually checked off.
+    case "clearCompleted":
+      return { ...state, tasks: state.tasks.filter((t) => !t.done) };
+
     case "redeem": {
       if (state.coins < action.reward.cost) return state;
       return {
@@ -188,6 +194,7 @@ interface GameContextValue {
   addTask: (title: string, difficulty: Difficulty, repeatable?: boolean) => void;
   completeTask: (task: Task) => void;
   deleteTask: (id: string) => void;
+  clearCompleted: () => void;
   redeem: (reward: Reward) => boolean;
   addReward: (name: string, cost: number) => void;
   deleteReward: (id: string) => void;
@@ -307,6 +314,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "deleteTask", id });
   }, []);
 
+  const clearCompleted = useCallback(() => {
+    dispatch({ type: "clearCompleted" });
+  }, []);
+
   const addReward = useCallback((name: string, cost: number) => {
     if (!name.trim()) return;
     dispatch({ type: "addReward", name, cost });
@@ -349,6 +360,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     addTask,
     completeTask,
     deleteTask,
+    clearCompleted,
     redeem,
     addReward,
     deleteReward,
