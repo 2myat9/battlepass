@@ -574,6 +574,19 @@ button {
   background: var(--mist);
 }
 
+/* task deletion surfaces on hover (or keyboard focus); on touch screens,
+   where hover doesn't exist, the button stays always visible */
+@media (hover: hover) {
+  .task .icon-btn {
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+  }
+  .task:hover .icon-btn,
+  .task .icon-btn:focus-visible {
+    opacity: 1;
+  }
+}
+
 /* ------------------------------------------------------------------ *
  *  Empty state
  * ------------------------------------------------------------------ */
