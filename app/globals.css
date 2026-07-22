@@ -574,17 +574,29 @@ button {
   background: var(--mist);
 }
 
-/* task deletion surfaces on hover (or keyboard focus); on touch screens,
-   where hover doesn't exist, the button stays always visible */
+/* task actions and the repeat counter surface on hover (or keyboard focus);
+   on touch screens, where hover doesn't exist, they stay always visible */
 @media (hover: hover) {
-  .task .icon-btn {
+  .task .icon-btn,
+  .task .repeat-count {
     opacity: 0;
     transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
   .task:hover .icon-btn,
-  .task .icon-btn:focus-visible {
+  .task .icon-btn:focus-visible,
+  .task:hover .repeat-count {
     opacity: 1;
   }
+  /* a pinned task shows its pin persistently, so the state stays legible
+     and the task can be unpinned without hovering */
+  .task .icon-btn.pin.pinned {
+    opacity: 1;
+  }
+}
+
+/* pinned = lit in the accent so the state reads at a glance */
+.icon-btn.pin.pinned {
+  color: var(--live);
 }
 
 /* ------------------------------------------------------------------ *

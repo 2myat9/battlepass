@@ -9,7 +9,11 @@ export default function HomeTab() {
   const { state, clearCompleted } = useGame();
   const [showDone, setShowDone] = useState(true);
 
-  const active = state.tasks.filter((t) => !t.done);
+  // Pinned tasks float to the top; sort is stable, so order within each
+  // group (newest-first) is preserved.
+  const active = state.tasks
+    .filter((t) => !t.done)
+    .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
   const done = state.tasks.filter((t) => t.done);
 
   return (

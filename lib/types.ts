@@ -14,6 +14,8 @@ export interface Task {
   /** completions in the current pass season (repeatable tasks only);
    *  reset to 0 when the season rolls */
   count?: number;
+  /** when true, the task sorts above unpinned tasks in the active list */
+  pinned?: boolean;
 }
 
 export interface Reward {

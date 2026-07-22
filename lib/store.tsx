@@ -52,6 +52,7 @@ type Action =
   | { type: "hydrate"; state: GameState; month: string }
   | { type: "addTask"; title: string; difficulty: Difficulty; repeatable: boolean }
   | { type: "completeTask"; id: string; day: string }
+  | { type: "togglePin"; id: string }
   | { type: "deleteTask"; id: string }
   | { type: "clearCompleted" }
   | { type: "redeem"; reward: Reward }
@@ -138,6 +139,14 @@ function reducer(state: GameState, action: Action): GameState {
       };
     }
 
+    case "togglePin":
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.id ? { ...t, pinned: !t.pinned } : t,
+        ),
+      };
+
     case "deleteTask":
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.id) };
 
@@ -193,6 +202,7 @@ interface GameContextValue {
   toasts: Toast[];
   addTask: (title: string, difficulty: Difficulty, repeatable?: boolean) => void;
   completeTask: (task: Task) => void;
+  togglePin: (id: string) => void;
   deleteTask: (id: string) => void;
   clearCompleted: () => void;
   redeem: (reward: Reward) => boolean;
@@ -310,6 +320,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [pushToast],
   );
 
+  const togglePin = useCallback((id: string) => {
+    dispatch({ type: "togglePin", id });
+  }, []);
+
   const deleteTask = useCallback((id: string) => {
     dispatch({ type: "deleteTask", id });
   }, []);
@@ -359,6 +373,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     toasts,
     addTask,
     completeTask,
+    togglePin,
     deleteTask,
     clearCompleted,
     redeem,
