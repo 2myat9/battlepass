@@ -21,7 +21,7 @@ Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 (via `@tail
 
 This is a **single-page** gamified todo app ("Battlepass"). Despite being a Next.js app, there is only one route (`/`). The three "tabs" (Tasks / Rewards / Stats) are **not routes** — they are swapped by local React state (`tab`) in the `Shell` component inside `app/page.tsx`. Adding a tab means adding to that switch and to `components/TabBar.tsx`, not creating a new page.
 
-There is intentionally **no backend**; all state lives on the client. The seam for a future backend is `lib/store.tsx` (the reducer actions and `sanitize()`).
+The game runs entirely on the client; the backend is optional sync. Signed-out users persist to `localStorage` only. Signed-in users (Google OAuth via Auth.js, `auth.ts`) also sync the whole `GameState` blob to Postgres (Neon + Drizzle, `lib/db/`) through `app/api/state/route.ts` (`GET`/`PUT`, validated with `sanitize()`). Client-side load/save helpers live in `lib/state-repository.ts`; on sign-in the server copy wins, or the local copy is uploaded if the server has none.
 
 ### State: `lib/store.tsx` is the single source of truth
 

@@ -59,7 +59,7 @@ Run:
 ```bash
 git init
 ```
-Expected: `Initialized empty Git repository in /Users/htoomyat/Projects/Battlepass/.git/`
+Expected: `Initialized empty Git repository in <path-to-repo>/.git/`
 
 - [ ] **Step 2: Create `.gitignore`**
 
